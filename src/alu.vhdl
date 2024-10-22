@@ -1,73 +1,42 @@
--- alu_tb.vhdl
+-- alu.vhdl
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
 
-entity ALU_tb is
-end ALU_tb;
+entity ALU is
+    Port (
+        a       : in  STD_LOGIC_VECTOR(63 downto 0);
+        b       : in  STD_LOGIC_VECTOR(63 downto 0);
+        opcode  : in  STD_LOGIC_VECTOR(3 downto 0); -- 0001: ADD, 0010: SUB
+        result  : out STD_LOGIC_VECTOR(63 downto 0);
+        carry   : out STD_LOGIC;
+        zero    : out STD_LOGIC
+    );
+end ALU;
 
-architecture Behavioral of ALU_tb is
-    component ALU
-        Port (
-            a       : in  STD_LOGIC_VECTOR(63 downto 0);
-            b       : in  STD_LOGIC_VECTOR(63 downto 0);
-            opcode  : in  STD_LOGIC_VECTOR(3 downto 0);
-            result  : out STD_LOGIC_VECTOR(63 downto 0);
-            carry   : out STD_LOGIC;
-            zero    : out STD_LOGIC
-        );
-    end component;
-
-    signal a       : STD_LOGIC_VECTOR(63 downto 0) := (others => '0');
-    signal b       : STD_LOGIC_VECTOR(63 downto 0) := (others => '0');
-    signal opcode  : STD_LOGIC_VECTOR(3 downto 0) := (others => '0');
-    signal result  : STD_LOGIC_VECTOR(63 downto 0);
-    signal carry   : STD_LOGIC;
-    signal zero    : STD_LOGIC;
+architecture Behavioral of ALU is
 begin
-    uut: ALU
-        Port map (
-            a => a,
-            b => b,
-            opcode => opcode,
-            result => result,
-            carry => carry,
-            zero => zero
-        );
-
-    stim_proc: process
+    process(a, b, opcode)
+        variable temp_result : UNSIGNED(64 downto 0);
     begin
-        -- Тест 1: 1 + 2 = 3
-        a <= x"0000000000000001";
-        b <= x"0000000000000002";
-        opcode <= "0001"; -- ADD
-        wait for 10 ns;
+        case opcode is
+            when "0001" => -- ADD
+                temp_result := UNSIGNED('0' & a) + UNSIGNED('0' & b);
+                result <= STD_LOGIC_VECTOR(temp_result(63 downto 0));
+                carry <= temp_result(64);
+            when "0010" => -- SUB
+                temp_result := UNSIGNED('0' & a) - UNSIGNED('0' & b);
+                result <= STD_LOGIC_VECTOR(temp_result(63 downto 0));
+                carry <= '0'; -- В данном простом АЛУ не реализован флаг переполнения
+            when others =>
+                result <= (others => '0');
+                carry <= '0';
+        end case;
 
-        -- Тест 2: 5 - 3 = 2
-        a <= x"0000000000000005";
-        b <= x"0000000000000003";
-        opcode <= "0010"; -- SUB
-        wait for 10 ns;
-
-        -- Тест 3: 0 + 0 = 0
-        a <= x"0000000000000000";
-        b <= x"0000000000000000";
-        opcode <= "0001"; -- ADD
-        wait for 10 ns;
-
-        -- Тест 4: 10 - 10 = 0
-        a <= x"000000000000000A";
-        b <= x"000000000000000A";
-        opcode <= "0010"; -- SUB
-        wait for 10 ns;
-
-        -- Тест 5: 0 - 1 (подтверждение работы вычитания)
-        a <= x"0000000000000000";
-        b <= x"0000000000000001";
-        opcode <= "0010"; -- SUB
-        wait for 10 ns;
-
-        -- Завершение симуляции
-        wait;
+        if result = (others => '0') then
+            zero <= '1';
+        else
+            zero <= '0';
+        end if;
     end process;
 end Behavioral;
