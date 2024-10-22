@@ -1,0 +1,13 @@
+# VHDL specific
+*.o
+*.cf
+*.ghw
+*.vcd
+
+# Simulation directories
+/sim/
+
+/*.log
+/*.jou
+/*.pb
+
